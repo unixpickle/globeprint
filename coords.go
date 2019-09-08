@@ -14,13 +14,13 @@ type GeoCoord struct {
 
 // Distance gets the Euclidean distance between g and g1
 // when traveling on the surface of the sphere.
-func (g *GeoCoord) Distance(g1 *GeoCoord) float64 {
+func (g GeoCoord) Distance(g1 GeoCoord) float64 {
 	return math.Acos(g.Coord3D().Dot(g1.Coord3D()))
 }
 
 // Coord3D converts g to Euclidean coordinates on a unit
 // sphere centered at the origin.
-func (g *GeoCoord) Coord3D() *Coord3D {
+func (g GeoCoord) Coord3D() *Coord3D {
 	return &Coord3D{
 		X: math.Sin(g.Lon) * math.Cos(g.Lat),
 		Y: math.Sin(g.Lat),
