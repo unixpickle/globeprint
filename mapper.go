@@ -12,6 +12,7 @@ import "math"
 type OctantMapper struct {
 	a        GeoCoord
 	b        GeoCoord
+	lonSpan  float64
 	distance float64
 }
 
@@ -24,10 +25,19 @@ func NewOctantMapper(north bool, startLon float64) *OctantMapper {
 		lat = math.Pi / 2
 	}
 	return &OctantMapper{
-		a:        GeoCoord{Lat: lat, Lon: startLon},
-		b:        GeoCoord{Lat: 0, Lon: startLon},
+		a:        GeoCoord{Lat: lat, Lon: startLon + math.Pi/4},
+		b:        GeoCoord{Lat: 0, Lon: startLon + math.Pi/4},
+		lonSpan:  math.Pi / 2,
 		distance: math.Pi / 2,
 	}
+}
+
+func (o *OctantMapper) MinLat() float64 {
+	return math.Min(o.a.Lat, o.b.Lat)
+}
+
+func (o *OctantMapper) MinLon() float64 {
+	return o.a.Lon - o.lonSpan/2
 }
 
 func (o *OctantMapper) Map(g GeoCoord) Coord2D {
@@ -44,5 +54,8 @@ func (o *OctantMapper) Map(g GeoCoord) Coord2D {
 
 	y := (1 + d1*d1 - d2*d2) / 2
 	x := math.Sqrt(math.Abs(d1*d1 - y*y))
+	if g.Lon < o.a.Lon {
+		x = -x
+	}
 	return Coord2D{X: x, Y: y}
 }
