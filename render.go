@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	renderWidth  = 2000
 	renderHeight = 2000
 
 	renderLatStep = 0.0003
@@ -14,12 +13,14 @@ const (
 )
 
 func RenderStrip(e *Equirect, s *StripMapper) image.Image {
-	res := image.NewRGBA(image.Rect(0, 0, renderWidth, renderHeight))
+	widthToHeight := s.Map(GeoCoord{Lat: s.MaxLat(), Lon: s.MaxLon()}).X * 2
+	width := int(math.Ceil(widthToHeight * renderHeight))
+	res := image.NewRGBA(image.Rect(0, 0, width, renderHeight))
 	for lat := s.MinLat(); lat < s.MinLat()+math.Pi/2; lat += renderLatStep {
 		for lon := s.MinLon(); lon < s.MaxLon(); lon += renderLonStep {
 			g := GeoCoord{Lat: lat, Lon: lon}
 			coord := s.Map(g)
-			x := int(math.Round(coord.X*renderWidth + renderWidth/2))
+			x := int(math.Round(coord.X*renderHeight)) + width/2
 			y := int(math.Round(coord.Y * renderHeight))
 			res.Set(x, y, e.At(g))
 		}

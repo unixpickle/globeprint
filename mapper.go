@@ -36,6 +36,10 @@ func (s *StripMapper) MinLat() float64 {
 	return math.Min(s.a.Lat, s.b.Lat)
 }
 
+func (s *StripMapper) MaxLat() float64 {
+	return s.MinLat() + math.Pi/2
+}
+
 func (s *StripMapper) MinLon() float64 {
 	return s.a.Lon - s.lonSpan/2
 }
