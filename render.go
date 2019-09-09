@@ -13,12 +13,12 @@ const (
 	renderLonStep = 0.0003
 )
 
-func RenderOctant(e *Equirect, o *OctantMapper) image.Image {
+func RenderStrip(e *Equirect, s *StripMapper) image.Image {
 	res := image.NewRGBA(image.Rect(0, 0, renderWidth, renderHeight))
-	for lat := o.MinLat(); lat < o.MinLat()+math.Pi/2; lat += renderLatStep {
-		for lon := o.MinLon(); lon < o.MinLon()+math.Pi/2; lon += renderLonStep {
+	for lat := s.MinLat(); lat < s.MinLat()+math.Pi/2; lat += renderLatStep {
+		for lon := s.MinLon(); lon < s.MaxLon(); lon += renderLonStep {
 			g := GeoCoord{Lat: lat, Lon: lon}
-			coord := o.Map(g)
+			coord := s.Map(g)
 			x := int(math.Round(coord.X*renderWidth + renderWidth/2))
 			y := int(math.Round(coord.Y * renderHeight))
 			res.Set(x, y, e.At(g))

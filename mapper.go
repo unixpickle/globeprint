@@ -2,47 +2,51 @@ package main
 
 import "math"
 
-// An OctantMapper maps points on a sphere to points on a
-// flattened plane. The octant on the sphere is touching
+// An StripMapper maps points on a sphere to points on a
+// flattened plane. The strip on the sphere is touching
 // either the north or south pole, and starts at some
-// longitude and extends math.Pi / 2 radians east.
+// longitude and extends some number of radians east.
 //
-// Mapping a point outside of the defined octant will
+// Mapping a point outside of the defined strip will
 // result in undefined behavior.
-type OctantMapper struct {
+type StripMapper struct {
 	a        GeoCoord
 	b        GeoCoord
 	lonSpan  float64
 	distance float64
 }
 
-func NewOctantMapper(north bool, startLon float64) *OctantMapper {
-	if startLon < -math.Pi || startLon > math.Pi/2 {
-		panic("start longitude out of bounds")
+func NewStripMapper(north bool, startLon, lonSpan float64) *StripMapper {
+	if startLon < -math.Pi || startLon+lonSpan > math.Pi {
+		panic("longitude out of bounds")
 	}
 	lat := -math.Pi / 2
 	if !north {
 		lat = math.Pi / 2
 	}
-	return &OctantMapper{
-		a:        GeoCoord{Lat: lat, Lon: startLon + math.Pi/4},
-		b:        GeoCoord{Lat: 0, Lon: startLon + math.Pi/4},
-		lonSpan:  math.Pi / 2,
+	return &StripMapper{
+		a:        GeoCoord{Lat: lat, Lon: startLon + lonSpan/2},
+		b:        GeoCoord{Lat: 0, Lon: startLon + lonSpan/2},
+		lonSpan:  lonSpan,
 		distance: math.Pi / 2,
 	}
 }
 
-func (o *OctantMapper) MinLat() float64 {
-	return math.Min(o.a.Lat, o.b.Lat)
+func (s *StripMapper) MinLat() float64 {
+	return math.Min(s.a.Lat, s.b.Lat)
 }
 
-func (o *OctantMapper) MinLon() float64 {
-	return o.a.Lon - o.lonSpan/2
+func (s *StripMapper) MinLon() float64 {
+	return s.a.Lon - s.lonSpan/2
 }
 
-func (o *OctantMapper) Map(g GeoCoord) Coord2D {
-	d1 := o.a.Distance(g) / o.distance
-	d2 := o.b.Distance(g) / o.distance
+func (s *StripMapper) MaxLon() float64 {
+	return s.a.Lon + s.lonSpan/2
+}
+
+func (s *StripMapper) Map(g GeoCoord) Coord2D {
+	d1 := s.a.Distance(g) / s.distance
+	d2 := s.b.Distance(g) / s.distance
 
 	// Solve for (x, y) if the distance to (0, 0) is d1
 	// and the distance to (0, 1) is d2, and x > 0.
@@ -54,7 +58,7 @@ func (o *OctantMapper) Map(g GeoCoord) Coord2D {
 
 	y := (1 + d1*d1 - d2*d2) / 2
 	x := math.Sqrt(math.Abs(d1*d1 - y*y))
-	if g.Lon < o.a.Lon {
+	if g.Lon < s.a.Lon {
 		x = -x
 	}
 	return Coord2D{X: x, Y: y}
