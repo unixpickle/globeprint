@@ -1,24 +1,54 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"log"
 	"math"
 	"os"
+
+	"github.com/unixpickle/essentials"
 )
 
 func main() {
-	r, _ := os.Open("images/equi1.jpeg")
-	img, _ := jpeg.Decode(r)
-	e := NewEquirect(img)
-	images := []image.Image{}
-	totalWidth := 0
+	r, err := os.Open("images/equi1.jpeg")
+	essentials.Must(err)
+	defer r.Close()
+	equirectImage, err := jpeg.Decode(r)
+	essentials.Must(err)
+	e := NewEquirect(equirectImage)
+
+	for _, north := range []bool{true, false} {
+		for idx := 0; idx < 4; idx++ {
+			name := fmt.Sprintf("images/octant_%v_%d.png", north, idx)
+			log.Println("Creating", name, "...")
+			octant := createOctant(e, north, idx)
+			w, err := os.Create(name)
+			essentials.Must(err)
+			defer w.Close()
+			essentials.Must(png.Encode(w, octant))
+		}
+	}
+}
+
+func createOctant(e *Equirect, north bool, octantIdx int) image.Image {
+	startAngle := float64(octantIdx-2) * math.Pi / 2
+	var strips []image.Image
 	for i := 0; i < 4; i++ {
-		rendered := RenderStrip(e, NewStripMapper(true, math.Pi/8*float64(i), math.Pi/8))
-		images = append(images, rendered)
-		totalWidth += rendered.Bounds().Dx()
+		angle := startAngle + float64(i)*math.Pi/8
+		rendered := RenderStrip(e, NewStripMapper(north, angle, math.Pi/8))
+		strips = append(strips, rendered)
+	}
+	return joinImages(strips)
+}
+
+func joinImages(images []image.Image) image.Image {
+	totalWidth := 0
+	for _, img := range images {
+		totalWidth += img.Bounds().Dx()
 	}
 	fullImage := image.NewRGBA(image.Rect(0, 0, totalWidth, images[0].Bounds().Dy()))
 	currentX := 0
@@ -27,7 +57,5 @@ func main() {
 			img, image.Point{X: 0, Y: 0}, draw.Over)
 		currentX += img.Bounds().Dx()
 	}
-	w, _ := os.Create("images/strips.png")
-	defer w.Close()
-	png.Encode(w, fullImage)
+	return fullImage
 }
