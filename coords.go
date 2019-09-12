@@ -45,3 +45,10 @@ type Coord3D struct {
 func (c *Coord3D) Dot(c1 *Coord3D) float64 {
 	return c.X*c1.X + c.Y*c1.Y + c.Z*c1.Z
 }
+
+// Scale scales all the coordinates by s.
+func (c *Coord3D) Scale(s float64) {
+	c.X *= s
+	c.Y *= s
+	c.Z *= s
+}
