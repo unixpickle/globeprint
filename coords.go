@@ -28,6 +28,20 @@ func (g GeoCoord) Coord3D() *Coord3D {
 	}
 }
 
+func (g GeoCoord) Clamped() GeoCoord {
+	if g.Lat < -math.Pi/2 {
+		g.Lat = -math.Pi / 2
+	} else if g.Lat > math.Pi/2 {
+		g.Lat = math.Pi / 2
+	}
+	if g.Lon < -math.Pi {
+		g.Lon = -math.Pi
+	} else if g.Lon > math.Pi {
+		g.Lon = math.Pi
+	}
+	return g
+}
+
 // A Coord2D is a coordinate on a flat, 2-D space.
 type Coord2D struct {
 	X float64

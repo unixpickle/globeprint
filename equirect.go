@@ -30,6 +30,6 @@ func (e *Equirect) At(g GeoCoord) color.Color {
 		panic("longitude out of range")
 	}
 	x := math.Round(e.width * (g.Lon + math.Pi) / (2 * math.Pi))
-	y := math.Round(e.height * (g.Lat + math.Pi/2) / math.Pi)
+	y := math.Round(e.height * (-g.Lat + math.Pi/2) / math.Pi)
 	return e.img.At(int(x), int(y))
 }
