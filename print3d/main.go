@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	LonStops = 400
-	LatStops = 300
+	LonStops = 500
+	LatStops = 400
 )
 
 func main() {
@@ -53,11 +53,13 @@ func RadiusFunction(e *globeprint.Equirect, coord globeprint.GeoCoord) float64 {
 	totalValue := 0.0
 	totalWeight := 0.0
 	for i := -3; i <= 3; i++ {
-		lat := coord.Lat + float64(i)/LonStops
+		lat := coord.Lat + float64(i)/(LonStops*2)
 		for j := -3; j <= 3; j++ {
-			lon := coord.Lon + float64(j)/(LonStops*math.Cos(lat)+1e-8)
-			weight := math.Exp(-(math.Pow(lat-coord.Lat, 2) + math.Pow(lon-coord.Lon, 2)))
-			totalValue += weight * RawRadiusFunction(e, globeprint.GeoCoord{Lat: lat, Lon: lon})
+			lon := coord.Lon + float64(j)/(LonStops*2*(math.Cos(lat)+1e-4))
+			newCoord := globeprint.GeoCoord{Lat: lat, Lon: lon}
+			distance := coord.Distance(newCoord)
+			weight := math.Exp(-distance * distance)
+			totalValue += weight * RawRadiusFunction(e, newCoord)
 			totalWeight += weight
 		}
 	}

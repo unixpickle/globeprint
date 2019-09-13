@@ -15,7 +15,7 @@ type GeoCoord struct {
 // Distance gets the Euclidean distance between g and g1
 // when traveling on the surface of the sphere.
 func (g GeoCoord) Distance(g1 GeoCoord) float64 {
-	return math.Acos(g.Coord3D().Dot(g1.Coord3D()))
+	return math.Acos(math.Min(1, math.Max(-1, g.Coord3D().Dot(g1.Coord3D()))))
 }
 
 // Coord3D converts g to Euclidean coordinates on a unit
