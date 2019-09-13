@@ -23,12 +23,7 @@ func NewEquirect(img image.Image) *Equirect {
 }
 
 func (e *Equirect) At(g GeoCoord) color.Color {
-	if g.Lat < -math.Pi/2 || g.Lat > math.Pi/2 {
-		panic("latitude out of range")
-	}
-	if g.Lon < -math.Pi || g.Lon > math.Pi {
-		panic("longitude out of range")
-	}
+	g = g.Normalize()
 	x := math.Round(e.width * (g.Lon + math.Pi) / (2 * math.Pi))
 	y := math.Round(e.height * (-g.Lat + math.Pi/2) / math.Pi)
 	return e.img.At(int(x), int(y))

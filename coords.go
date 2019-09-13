@@ -28,17 +28,17 @@ func (g GeoCoord) Coord3D() *Coord3D {
 	}
 }
 
-func (g GeoCoord) Clamped() GeoCoord {
-	if g.Lat < -math.Pi/2 {
-		g.Lat = -math.Pi / 2
-	} else if g.Lat > math.Pi/2 {
-		g.Lat = math.Pi / 2
+// Normalize brings the latitude into the range -pi/2 to
+// pi/2 and the longitude into the range -pi to pi.
+func (g GeoCoord) Normalize() GeoCoord {
+	p := g.Coord3D()
+	g.Lat = math.Asin(p.Y)
+	cosLat := math.Cos(g.Lat)
+	if cosLat < 1e-8 {
+		g.Lon = 0
+		return g
 	}
-	if g.Lon < -math.Pi {
-		g.Lon = -math.Pi
-	} else if g.Lon > math.Pi {
-		g.Lon = math.Pi
-	}
+	g.Lon = math.Atan2(p.X/cosLat, p.Z/cosLat)
 	return g
 }
 

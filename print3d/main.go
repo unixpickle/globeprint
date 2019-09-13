@@ -47,7 +47,7 @@ func GeoToCartesian(e *globeprint.Equirect, g globeprint.GeoCoord) globeprint.Co
 }
 
 func RadiusFunction(e *globeprint.Equirect, coord globeprint.GeoCoord) float64 {
-	r, g, b, _ := e.At(coord.Clamped()).RGBA()
+	r, g, b, _ := e.At(coord).RGBA()
 	if r > 0xf000 && g > 0xf000 && b > 0xf000 {
 		return 1.03
 	}

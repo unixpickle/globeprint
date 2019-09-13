@@ -21,9 +21,6 @@ type StripMapper struct {
 }
 
 func NewStripMapper(north bool, startLon, lonSpan float64) *StripMapper {
-	if startLon < -math.Pi || startLon+lonSpan > math.Pi {
-		panic("longitude out of bounds")
-	}
 	lat := -math.Pi / 2
 	if !north {
 		lat = math.Pi / 2
