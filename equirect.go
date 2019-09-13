@@ -24,7 +24,7 @@ func NewEquirect(img image.Image) *Equirect {
 
 func (e *Equirect) At(g GeoCoord) color.Color {
 	g = g.Normalize()
-	x := math.Round(e.width * (g.Lon + math.Pi) / (2 * math.Pi))
-	y := math.Round(e.height * (-g.Lat + math.Pi/2) / math.Pi)
+	x := math.Round((e.width - 1) * (g.Lon + math.Pi) / (2 * math.Pi))
+	y := math.Round((e.height - 1) * (-g.Lat + math.Pi/2) / math.Pi)
 	return e.img.At(int(x), int(y))
 }
