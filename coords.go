@@ -55,6 +55,11 @@ type Coord3D struct {
 	Z float64
 }
 
+// Norm computes the vector norm.
+func (c *Coord3D) Norm() float64 {
+	return math.Sqrt(c.X*c.X + c.Y*c.Y + c.Z*c.Z)
+}
+
 // Dot computes the dot product of c and c1.
 func (c *Coord3D) Dot(c1 *Coord3D) float64 {
 	return c.X*c1.X + c.Y*c1.Y + c.Z*c1.Z
@@ -65,4 +70,9 @@ func (c *Coord3D) Scale(s float64) {
 	c.X *= s
 	c.Y *= s
 	c.Z *= s
+}
+
+// Dist computes the Euclidean distance to c1.
+func (c *Coord3D) Dist(c1 *Coord3D) float64 {
+	return math.Sqrt(math.Pow(c.X-c1.X, 2) + math.Pow(c.Y-c1.Y, 2) + math.Pow(c.Z-c1.Z, 2))
 }

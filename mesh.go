@@ -34,6 +34,14 @@ type Mesh struct {
 	vertexToTriangle map[Coord3D][]*Triangle
 }
 
+// NewMesh creates an empty mesh.
+func NewMesh() *Mesh {
+	return &Mesh{
+		triangles:        map[*Triangle]bool{},
+		vertexToTriangle: map[Coord3D][]*Triangle{},
+	}
+}
+
 // Add adds the triangle t to the mesh.
 func (m *Mesh) Add(t *Triangle) {
 	if m.triangles[t] {
@@ -70,7 +78,7 @@ func (m *Mesh) Remove(t *Triangle) {
 // visited, and if it removes triangles before they are
 // visited, they will not be visited.
 func (m *Mesh) Iterate(f func(t *Triangle)) {
-	var all []*Triangle
+	all := make([]*Triangle, 0, len(m.triangles))
 	for t := range m.triangles {
 		all = append(all, t)
 	}
@@ -99,4 +107,31 @@ func (m *Mesh) Neighbors(t *Triangle) []*Triangle {
 		}
 	}
 	return res
+}
+
+// Find gets all the triangles that contain all of the
+// passed points.
+func (m *Mesh) Find(ps ...*Coord3D) []*Triangle {
+	resSet := map[*Triangle]int{}
+	for _, p := range ps {
+		for _, t1 := range m.vertexToTriangle[*p] {
+			resSet[t1]++
+		}
+	}
+	res := make([]*Triangle, 0, len(resSet))
+	for t1, count := range resSet {
+		if count == len(ps) {
+			res = append(res, t1)
+		}
+	}
+	return res
+}
+
+// EncodeSTL encodes the mesh as STL data.
+func (m *Mesh) EncodeSTL() []byte {
+	ts := make([]*Triangle, 0, len(m.triangles))
+	for t := range m.triangles {
+		ts = append(ts, t)
+	}
+	return EncodeSTL(ts)
 }

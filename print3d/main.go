@@ -23,24 +23,15 @@ func main() {
 	essentials.Must(err)
 	e := globeprint.NewEquirect(img)
 
-	var triangles []*globeprint.Triangle
-	lonStep := math.Pi * 2 / float64(LonStops)
-	latStep := math.Pi / float64(LatStops)
-	for lonIdx := 0; lonIdx < LonStops; lonIdx++ {
-		for latIdx := 0; latIdx < LatStops; latIdx++ {
-			longitude := -math.Pi + float64(lonIdx)*lonStep
-			latitude := -math.Pi/2 + float64(latIdx)*latStep
-			p1 := GeoToCartesian(e, globeprint.GeoCoord{Lat: latitude, Lon: longitude})
-			p2 := GeoToCartesian(e, globeprint.GeoCoord{Lat: latitude, Lon: longitude + lonStep})
-			p3 := GeoToCartesian(e, globeprint.GeoCoord{Lat: latitude + latStep,
-				Lon: longitude + lonStep})
-			p4 := GeoToCartesian(e, globeprint.GeoCoord{Lat: latitude + latStep, Lon: longitude})
-			triangles = append(triangles, &globeprint.Triangle{p1, p2, p3},
-				&globeprint.Triangle{p1, p3, p4})
-		}
+	sphereFunc := &SmoothFunc{
+		F:      &EquirectFunc{Equirect: e},
+		Delta:  1 / (2 * LonStops),
+		Stddev: 1 / LonStops,
+		Steps:  3,
 	}
-	data := globeprint.EncodeSTL(triangles)
-	ioutil.WriteFile("globe.stl", data, 0755)
+
+	mesh := BaseMesh(sphereFunc, 50)
+	ioutil.WriteFile("globe.stl", mesh.EncodeSTL(), 0755)
 }
 
 func GeoToCartesian(e *globeprint.Equirect, g globeprint.GeoCoord) globeprint.Coord3D {
