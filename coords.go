@@ -32,14 +32,7 @@ func (g GeoCoord) Coord3D() *Coord3D {
 // pi/2 and the longitude into the range -pi to pi.
 func (g GeoCoord) Normalize() GeoCoord {
 	p := g.Coord3D()
-	g.Lat = math.Asin(p.Y)
-	cosLat := math.Cos(g.Lat)
-	if cosLat < 1e-8 {
-		g.Lon = 0
-		return g
-	}
-	g.Lon = math.Atan2(p.X/cosLat, p.Z/cosLat)
-	return g
+	return p.Geo()
 }
 
 // A Coord2D is a coordinate on a flat, 2-D space.
@@ -75,4 +68,19 @@ func (c *Coord3D) Scale(s float64) {
 // Dist computes the Euclidean distance to c1.
 func (c *Coord3D) Dist(c1 *Coord3D) float64 {
 	return math.Sqrt(math.Pow(c.X-c1.X, 2) + math.Pow(c.Y-c1.Y, 2) + math.Pow(c.Z-c1.Z, 2))
+}
+
+// Geo computes a normalized geo coordinate.
+func (c *Coord3D) Geo() GeoCoord {
+	p := *c
+	p.Scale(1 / (p.Norm() + 1e-8))
+	g := GeoCoord{}
+	g.Lat = math.Asin(p.Y)
+	cosLat := math.Cos(g.Lat)
+	if cosLat < 1e-8 {
+		g.Lon = 0
+		return g
+	}
+	g.Lon = math.Atan2(p.X/cosLat, p.Z/cosLat)
+	return g
 }

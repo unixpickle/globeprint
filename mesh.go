@@ -2,6 +2,7 @@ package globeprint
 
 import (
 	"math"
+	"sort"
 
 	"github.com/unixpickle/essentials"
 )
@@ -78,9 +79,20 @@ func (m *Mesh) Remove(t *Triangle) {
 // visited, and if it removes triangles before they are
 // visited, they will not be visited.
 func (m *Mesh) Iterate(f func(t *Triangle)) {
+	m.IterateSorted(f, nil)
+}
+
+// IterateSorted is like Iterate, but it first sorts all
+// the triangles according to a less than function, cmp.
+func (m *Mesh) IterateSorted(f func(t *Triangle), cmp func(t1, t2 *Triangle) bool) {
 	all := make([]*Triangle, 0, len(m.triangles))
 	for t := range m.triangles {
 		all = append(all, t)
+	}
+	if cmp != nil {
+		sort.Slice(all, func(i, j int) bool {
+			return cmp(all[i], all[j])
+		})
 	}
 	for _, t := range all {
 		if m.triangles[t] {
