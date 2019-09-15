@@ -24,8 +24,8 @@ func main() {
 		Steps:  3,
 	}
 
-	mesh := BaseMesh(sphereFunc, 50)
-	SubdivideMesh(sphereFunc, mesh, 6, 0.0001)
+	mesh := BaseMesh(sphereFunc, 100)
+	SubdivideMesh(sphereFunc, mesh, 5, 0.001)
 
 	ioutil.WriteFile("globe.stl", mesh.EncodeSTL(), 0755)
 }
