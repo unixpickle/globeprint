@@ -17,12 +17,7 @@ func main() {
 	essentials.Must(err)
 	e := globeprint.NewEquirect(img)
 
-	sphereFunc := &SmoothFunc{
-		F:      &EquirectFunc{Equirect: e},
-		Delta:  1.0 / 500,
-		Stddev: 1.0 / 500,
-		Steps:  3,
-	}
+	sphereFunc := &EquirectFunc{Equirect: e}
 
 	mesh := BaseMesh(sphereFunc, 100)
 	SubdivideMesh(sphereFunc, mesh, 5, 0.001)

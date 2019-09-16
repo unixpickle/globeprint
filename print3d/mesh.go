@@ -62,27 +62,34 @@ func BaseMesh(s SphereFunc, stops int) *globeprint.Mesh {
 
 func SubdivideMesh(s SphereFunc, m *globeprint.Mesh, numIters int, rEpsilon float64) {
 	for i := 0; i < numIters; i++ {
+		var lines [][2]*globeprint.Coord3D
 		m.IterateSorted(func(t *globeprint.Triangle) {
 			t = permuteTriangle(t)
 			r1 := t[0].Norm()
 			r2 := t[1].Norm()
 			r3 := t[2].Norm()
 			if math.Abs(r1-r2) > rEpsilon {
-				splitLine(s, m, &t[0], &t[1])
+				lines = append(lines, [2]*globeprint.Coord3D{&t[0], &t[1]})
 			}
 			if math.Abs(r2-r3) > rEpsilon {
-				splitLine(s, m, &t[1], &t[2])
+				lines = append(lines, [2]*globeprint.Coord3D{&t[1], &t[2]})
 			}
 			if math.Abs(r3-r1) > rEpsilon {
-				splitLine(s, m, &t[2], &t[0])
+				lines = append(lines, [2]*globeprint.Coord3D{&t[2], &t[0]})
 			}
 		}, func(t1, t2 *globeprint.Triangle) bool {
 			return maxSideLength(t1) > maxSideLength(t2)
 		})
+		for _, line := range lines {
+			splitLine(s, m, line[0], line[1])
+		}
 	}
 }
 
 func splitLine(s SphereFunc, m *globeprint.Mesh, p1, p2 *globeprint.Coord3D) {
+	if len(m.Find(p1, p2)) != 2 {
+		return
+	}
 	midpoint := globeprint.Coord3D{
 		X: (p1.X + p2.X) / 2,
 		Y: (p1.Y + p2.Y) / 2,
@@ -90,9 +97,6 @@ func splitLine(s SphereFunc, m *globeprint.Mesh, p1, p2 *globeprint.Coord3D) {
 	}
 	mpGeo := midpoint.Geo()
 	midpoint.Scale(s.Radius(mpGeo) / midpoint.Norm())
-	if len(m.Find(p1, p2)) != 2 {
-		panic("invalid surface")
-	}
 	for _, t := range m.Find(p1, p2) {
 		m.Remove(t)
 		p3 := t[0]
