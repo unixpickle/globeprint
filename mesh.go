@@ -43,6 +43,61 @@ func NewMesh() *Mesh {
 	}
 }
 
+// NewMeshSpherical creates a mesh with a function of
+// latitude and longitude.
+func NewMeshSpherical(radius func(g GeoCoord) float64, stops int) *Mesh {
+	res := NewMesh()
+	lonStep := math.Pi * 2 / float64(stops)
+	latStep := math.Pi / float64(stops)
+	latFunc := func(i int) float64 {
+		return -math.Pi/2 + float64(i)*latStep
+	}
+	lonFunc := func(i int) float64 {
+		if i == stops {
+			// Make rounding match up at the edges, since
+			// sin(-pi) != sin(pi) in the stdlib.
+			return -math.Pi
+		}
+		return -math.Pi + float64(i)*lonStep
+	}
+	for lonIdx := 0; lonIdx < stops; lonIdx++ {
+		for latIdx := 0; latIdx < stops; latIdx++ {
+			longitude := lonFunc(lonIdx)
+			latitude := latFunc(latIdx)
+			longitudeNext := lonFunc(lonIdx + 1)
+			latitudeNext := latFunc(latIdx + 1)
+			g := []GeoCoord{
+				GeoCoord{Lat: latitude, Lon: longitude},
+				GeoCoord{Lat: latitude, Lon: longitudeNext},
+				GeoCoord{Lat: latitudeNext, Lon: longitudeNext},
+				GeoCoord{Lat: latitudeNext, Lon: longitude},
+			}
+			p := make([]Coord3D, 4)
+			for i, x := range g {
+				p[i] = *x.Coord3D()
+				p[i].Scale(radius(x))
+			}
+			if latIdx == 0 {
+				// p[0] and p[1] are technically equivalent,
+				// but they are numerically slightly different,
+				// so we must make it perfect.
+				p[0] = Coord3D{X: 0, Y: -1, Z: 0}
+			} else if latIdx == stops-1 {
+				// p[2] and p[3] are technically equivalent,
+				// but see note above.
+				p[2] = Coord3D{X: 0, Y: 1, Z: 0}
+			}
+			if latIdx != 0 {
+				res.Add(&Triangle{p[0], p[1], p[2]})
+			}
+			if latIdx != stops-1 {
+				res.Add(&Triangle{p[0], p[2], p[3]})
+			}
+		}
+	}
+	return res
+}
+
 // Add adds the triangle t to the mesh.
 func (m *Mesh) Add(t *Triangle) {
 	if m.triangles[t] {
