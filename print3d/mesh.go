@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand"
 
 	"github.com/unixpickle/globeprint"
 )
@@ -62,75 +61,30 @@ func BaseMesh(s SphereFunc, stops int) *globeprint.Mesh {
 
 func SubdivideMesh(s SphereFunc, m *globeprint.Mesh, numIters int, rEpsilon float64) {
 	for i := 0; i < numIters; i++ {
-		var lines [][2]*globeprint.Coord3D
-		m.IterateSorted(func(t *globeprint.Triangle) {
-			t = permuteTriangle(t)
+		subdivider := globeprint.NewSubdivider()
+		m.Iterate(func(t *globeprint.Triangle) {
 			r1 := t[0].Norm()
 			r2 := t[1].Norm()
 			r3 := t[2].Norm()
 			if math.Abs(r1-r2) > rEpsilon {
-				lines = append(lines, [2]*globeprint.Coord3D{&t[0], &t[1]})
+				subdivider.Add(&t[0], &t[1])
 			}
 			if math.Abs(r2-r3) > rEpsilon {
-				lines = append(lines, [2]*globeprint.Coord3D{&t[1], &t[2]})
+				subdivider.Add(&t[1], &t[2])
 			}
 			if math.Abs(r3-r1) > rEpsilon {
-				lines = append(lines, [2]*globeprint.Coord3D{&t[2], &t[0]})
+				subdivider.Add(&t[2], &t[0])
 			}
-		}, func(t1, t2 *globeprint.Triangle) bool {
-			return maxSideLength(t1) > maxSideLength(t2)
 		})
-		for _, line := range lines {
-			splitLine(s, m, line[0], line[1])
-		}
-	}
-}
-
-func splitLine(s SphereFunc, m *globeprint.Mesh, p1, p2 *globeprint.Coord3D) {
-	if len(m.Find(p1, p2)) != 2 {
-		return
-	}
-	midpoint := globeprint.Coord3D{
-		X: (p1.X + p2.X) / 2,
-		Y: (p1.Y + p2.Y) / 2,
-		Z: (p1.Z + p2.Z) / 2,
-	}
-	mpGeo := midpoint.Geo()
-	midpoint.Scale(s.Radius(mpGeo) / midpoint.Norm())
-	for _, t := range m.Find(p1, p2) {
-		m.Remove(t)
-		p3 := t[0]
-		if p3 == *p1 || p3 == *p2 {
-			p3 = t[1]
-			if p3 == *p1 || p3 == *p2 {
-				p3 = t[2]
+		subdivider.Subdivide(m, func(p1, p2 *globeprint.Coord3D) *globeprint.Coord3D {
+			midpoint := globeprint.Coord3D{
+				X: (p1.X + p2.X) / 2,
+				Y: (p1.Y + p2.Y) / 2,
+				Z: (p1.Z + p2.Z) / 2,
 			}
-		}
-		newTriangles := []*globeprint.Triangle{
-			&globeprint.Triangle{*p1, midpoint, p3},
-			&globeprint.Triangle{p3, midpoint, *p2},
-		}
-		// TODO: figure out if we can do this automatically
-		// by choosing the correct order.
-		norm := t.ComputeNormal()
-		for _, t1 := range newTriangles {
-			norm1 := t1.ComputeNormal()
-			if norm1.Dot(&norm) < 0 {
-				t1[1], t1[2] = t1[2], t1[1]
-			}
-			m.Add(t1)
-		}
+			mpGeo := midpoint.Geo()
+			midpoint.Scale(s.Radius(mpGeo) / midpoint.Norm())
+			return &midpoint
+		})
 	}
-}
-
-func permuteTriangle(t *globeprint.Triangle) *globeprint.Triangle {
-	t1 := new(globeprint.Triangle)
-	for i, j := range rand.Perm(3) {
-		t1[i] = t[j]
-	}
-	return t1
-}
-
-func maxSideLength(t *globeprint.Triangle) float64 {
-	return math.Max(math.Max(t[0].Dist(&t[1]), t[1].Dist(&t[2])), t[2].Dist(&t[0]))
 }
