@@ -3,6 +3,7 @@ package main
 import (
 	"image/png"
 	"io/ioutil"
+	"math"
 	"os"
 
 	"github.com/unixpickle/essentials"
@@ -21,32 +22,24 @@ func main() {
 	mesh := globeprint.NewMeshSpherical(func(g globeprint.GeoCoord) float64 {
 		return 1
 	}, 100)
+
 	for i := 0; i < 4; i++ {
 		SubdivideMesh(hc, mesh)
 	}
+
 	mesh.Iterate(func(t *globeprint.Triangle) {
 		if hc.TriangleHasHole(t) {
 			mesh.Remove(t)
 		}
 	})
 
-	// Create internal side and the edges.
-	mesh.Iterate(func(t *globeprint.Triangle) {
-		scaled := ScaleTriangle(t, 0.9)
-		mesh.Add(scaled)
+	RemoveFloaters(mesh)
+	m1, m2 := FilterTopBottom(mesh)
+	CreateThickness(m1)
+	CreateThickness(m2)
 
-		if len(mesh.Find(&t[0], &t[1])) == 1 {
-			CreateQuad(mesh, &t[1], &t[0], &scaled[0], &scaled[1])
-		}
-		if len(mesh.Find(&t[1], &t[2])) == 1 {
-			CreateQuad(mesh, &t[2], &t[1], &scaled[1], &scaled[2])
-		}
-		if len(mesh.Find(&t[2], &t[0])) == 1 {
-			CreateQuad(mesh, &t[0], &t[2], &scaled[2], &scaled[0])
-		}
-	})
-
-	ioutil.WriteFile("globe.stl", mesh.EncodeSTL(), 0755)
+	ioutil.WriteFile("top.stl", m1.EncodeSTL(), 0755)
+	ioutil.WriteFile("bottom.stl", m2.EncodeSTL(), 0755)
 }
 
 func SubdivideMesh(hc *HoleChecker, mesh *globeprint.Mesh) {
@@ -74,6 +67,70 @@ func SubdivideMesh(hc *HoleChecker, mesh *globeprint.Mesh) {
 		midpoint.Scale(1 / midpoint.Norm())
 		return &midpoint
 	})
+}
+
+func RemoveFloaters(m *globeprint.Mesh) {
+	// Find a triangle on the north pole, since we know
+	// all the major oceans are connected to it.
+	maxY := -1.0
+	var topTriangle *globeprint.Triangle
+	m.Iterate(func(t *globeprint.Triangle) {
+		if t[0].Y > maxY {
+			maxY = t[0].Y
+			topTriangle = t
+		}
+	})
+
+	queue := []*globeprint.Triangle{topTriangle}
+	visited := map[*globeprint.Triangle]bool{topTriangle: true}
+	for len(queue) > 0 {
+		next := queue[0]
+		queue = queue[1:]
+		for _, neighbor := range m.Neighbors(next) {
+			if !visited[neighbor] {
+				visited[neighbor] = true
+				queue = append(queue, neighbor)
+			}
+		}
+	}
+	m.Iterate(func(t *globeprint.Triangle) {
+		if !visited[t] {
+			m.Remove(t)
+		}
+	})
+}
+
+func CreateThickness(m *globeprint.Mesh) {
+	m.Iterate(func(t *globeprint.Triangle) {
+		scaled := ScaleTriangle(t, 0.9)
+		m.Add(scaled)
+
+		if len(m.Find(&t[0], &t[1])) == 1 {
+			CreateQuad(m, &t[1], &t[0], &scaled[0], &scaled[1])
+		}
+		if len(m.Find(&t[1], &t[2])) == 1 {
+			CreateQuad(m, &t[2], &t[1], &scaled[1], &scaled[2])
+		}
+		if len(m.Find(&t[2], &t[0])) == 1 {
+			CreateQuad(m, &t[0], &t[2], &scaled[2], &scaled[0])
+		}
+	})
+}
+
+func FilterTopBottom(m *globeprint.Mesh) (*globeprint.Mesh, *globeprint.Mesh) {
+	m1 := globeprint.NewMesh()
+	m2 := globeprint.NewMesh()
+	m.Iterate(func(t *globeprint.Triangle) {
+		maxY := math.Max(math.Max(t[0].Y, t[1].Y), t[2].Y)
+		minY := math.Min(math.Min(t[0].Y, t[1].Y), t[2].Y)
+		if maxY < 1e-4 {
+			m2.Add(t)
+		}
+		if minY > -1e-4 {
+			m1.Add(t)
+		}
+	})
+	return m1, m2
 }
 
 func ScaleTriangle(t *globeprint.Triangle, s float64) *globeprint.Triangle {
