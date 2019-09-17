@@ -35,8 +35,8 @@ func main() {
 
 	RemoveFloaters(mesh)
 	m1, m2 := FilterTopBottom(mesh)
-	CreateThickness(m1)
-	CreateThickness(m2)
+	CreateThickness(m1, 1.2)
+	CreateThickness(m2, -1.2)
 
 	ioutil.WriteFile("top.stl", m1.EncodeSTL(), 0755)
 	ioutil.WriteFile("bottom.stl", m2.EncodeSTL(), 0755)
@@ -100,19 +100,22 @@ func RemoveFloaters(m *globeprint.Mesh) {
 	})
 }
 
-func CreateThickness(m *globeprint.Mesh) {
+func CreateThickness(m *globeprint.Mesh, yDirection float64) {
 	m.Iterate(func(t *globeprint.Triangle) {
-		scaled := ScaleTriangle(t, 0.9)
+		scaled := ScaleTriangle(t, 1.4)
+		for i := range scaled {
+			scaled[i].Y = yDirection
+		}
 		m.Add(scaled)
 
 		if len(m.Find(&t[0], &t[1])) == 1 {
-			CreateQuad(m, &t[1], &t[0], &scaled[0], &scaled[1])
+			CreateQuad(m, &t[0], &t[1], &scaled[1], &scaled[0])
 		}
 		if len(m.Find(&t[1], &t[2])) == 1 {
-			CreateQuad(m, &t[2], &t[1], &scaled[1], &scaled[2])
+			CreateQuad(m, &t[1], &t[2], &scaled[2], &scaled[1])
 		}
 		if len(m.Find(&t[2], &t[0])) == 1 {
-			CreateQuad(m, &t[0], &t[2], &scaled[2], &scaled[0])
+			CreateQuad(m, &t[2], &t[0], &scaled[0], &scaled[2])
 		}
 	})
 }
