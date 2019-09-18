@@ -10,8 +10,10 @@ import (
 	"github.com/unixpickle/globeprint"
 )
 
+const FlatBase = false
+
 func main() {
-	f, err := os.Open("../images/equi2.png")
+	f, err := os.Open("../images/thickened.png")
 	essentials.Must(err)
 	defer f.Close()
 	img, err := png.Decode(f)
@@ -103,8 +105,10 @@ func RemoveFloaters(m *globeprint.Mesh) {
 func CreateThickness(m *globeprint.Mesh, yDirection float64) {
 	m.Iterate(func(t *globeprint.Triangle) {
 		scaled := ScaleTriangle(t, 1.4)
-		for i := range scaled {
-			scaled[i].Y = yDirection
+		if FlatBase {
+			for i := range scaled {
+				scaled[i].Y = yDirection
+			}
 		}
 		m.Add(scaled)
 
