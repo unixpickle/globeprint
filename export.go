@@ -1,9 +1,11 @@
 package globeprint
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -69,4 +71,54 @@ func EncodePLY(triangles []*Triangle, colorFunc func(Coord3D) (uint8, uint8, uin
 		buffer.WriteByte('\n')
 	}
 	return []byte(buffer.String())
+}
+
+// EncodeMaterialOBJ encodes a 3D model as a zip file
+// containing both an OBJ and an MTL file.
+func EncodeMaterialOBJ(triangles []*Triangle, colorFunc func(t *Triangle) [3]float64) []byte {
+	colorToMat := map[[3]float64]int{}
+	colorToTriangle := map[[3]float64][]*Triangle{}
+	coords := []Coord3D{}
+	coordToIdx := map[Coord3D]int{}
+	for _, t := range triangles {
+		c := colorFunc(t)
+		if _, ok := colorToMat[c]; !ok {
+			colorToMat[c] = len(colorToMat)
+		}
+		colorToTriangle[c] = append(colorToTriangle[c], t)
+		for _, p := range t {
+			if _, ok := coordToIdx[p]; !ok {
+				coordToIdx[p] = len(coords)
+				coords = append(coords, p)
+			}
+		}
+	}
+
+	var objBuffer strings.Builder
+	objBuffer.WriteString("mtllib material.mtl\n")
+	for _, c := range coords {
+		objBuffer.WriteString(fmt.Sprintf("v %f %f %f\n", c.X, c.Y, c.Z))
+	}
+	for color, ts := range colorToTriangle {
+		objBuffer.WriteString(fmt.Sprintf("usemtl mat%d\n", colorToMat[color]))
+		for _, t := range ts {
+			objBuffer.WriteString(fmt.Sprintf("f %d %d %d\n", coordToIdx[t[0]]+1,
+				coordToIdx[t[1]]+1, coordToIdx[t[2]]+1))
+		}
+	}
+
+	var mtlBuffer strings.Builder
+	for color, mat := range colorToMat {
+		mtlBuffer.WriteString(fmt.Sprintf("newmtl mat%d\nillum 1\nKa %f %f %f\nKd %f %f %f\n",
+			mat, color[0], color[1], color[2], color[0], color[1], color[2]))
+	}
+
+	var fullBuffer bytes.Buffer
+	writer := zip.NewWriter(&fullBuffer)
+	w, _ := writer.Create("object.obj")
+	io.Copy(w, bytes.NewReader([]byte(objBuffer.String())))
+	w, _ = writer.Create("material.mtl")
+	io.Copy(w, bytes.NewReader([]byte(mtlBuffer.String())))
+	writer.Close()
+	return fullBuffer.Bytes()
 }

@@ -201,6 +201,12 @@ func (m *Mesh) EncodePLY(colorFunc func(c Coord3D) (uint8, uint8, uint8)) []byte
 	return EncodePLY(m.triangleSlice(), colorFunc)
 }
 
+// EncodeMaterialOBJ encodes the mesh as a zip file with
+// per-triangle material.
+func (m *Mesh) EncodeMaterialOBJ(colorFunc func(t *Triangle) [3]float64) []byte {
+	return EncodeMaterialOBJ(m.triangleSlice(), colorFunc)
+}
+
 func (m *Mesh) triangleSlice() []*Triangle {
 	ts := make([]*Triangle, 0, len(m.triangles))
 	for t := range m.triangles {
