@@ -140,10 +140,7 @@ func (m *Mesh) Iterate(f func(t *Triangle)) {
 // IterateSorted is like Iterate, but it first sorts all
 // the triangles according to a less than function, cmp.
 func (m *Mesh) IterateSorted(f func(t *Triangle), cmp func(t1, t2 *Triangle) bool) {
-	all := make([]*Triangle, 0, len(m.triangles))
-	for t := range m.triangles {
-		all = append(all, t)
-	}
+	all := m.triangleSlice()
 	if cmp != nil {
 		sort.Slice(all, func(i, j int) bool {
 			return cmp(all[i], all[j])
@@ -196,9 +193,18 @@ func (m *Mesh) Find(ps ...*Coord3D) []*Triangle {
 
 // EncodeSTL encodes the mesh as STL data.
 func (m *Mesh) EncodeSTL() []byte {
+	return EncodeSTL(m.triangleSlice())
+}
+
+// EncodePLY encodes the mesh as a PLY file with color.
+func (m *Mesh) EncodePLY(colorFunc func(c Coord3D) (uint8, uint8, uint8)) []byte {
+	return EncodePLY(m.triangleSlice(), colorFunc)
+}
+
+func (m *Mesh) triangleSlice() []*Triangle {
 	ts := make([]*Triangle, 0, len(m.triangles))
 	for t := range m.triangles {
 		ts = append(ts, t)
 	}
-	return EncodeSTL(ts)
+	return ts
 }

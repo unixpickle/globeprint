@@ -19,8 +19,13 @@ func main() {
 
 	sphereFunc := &EquirectFunc{Equirect: e}
 
-	mesh := BaseMesh(sphereFunc, 100)
+	mesh := BaseMesh(sphereFunc, 150)
 	SubdivideMesh(sphereFunc, mesh, 5, 0.001)
 
-	ioutil.WriteFile("globe.stl", mesh.EncodeSTL(), 0755)
+	vertexColor := func(coord globeprint.Coord3D) (uint8, uint8, uint8) {
+		r, g, b, _ := e.At(coord.Geo()).RGBA()
+		return uint8(r >> 8), uint8(g >> 8), uint8(b >> 8)
+	}
+
+	ioutil.WriteFile("globe.ply", mesh.EncodePLY(vertexColor), 0755)
 }
