@@ -111,13 +111,13 @@ func CreateThickness(m *model3d.Mesh, yDirection float64) {
 		}
 		m.Add(scaled)
 
-		if len(m.Find(&t[0], &t[1])) == 1 {
+		if len(m.Find(t[0], t[1])) == 1 {
 			CreateQuad(m, &t[0], &t[1], &scaled[1], &scaled[0])
 		}
-		if len(m.Find(&t[1], &t[2])) == 1 {
+		if len(m.Find(t[1], t[2])) == 1 {
 			CreateQuad(m, &t[1], &t[2], &scaled[2], &scaled[1])
 		}
-		if len(m.Find(&t[2], &t[0])) == 1 {
+		if len(m.Find(t[2], t[0])) == 1 {
 			CreateQuad(m, &t[2], &t[0], &scaled[0], &scaled[2])
 		}
 	})
