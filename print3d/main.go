@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/unixpickle/essentials"
-	"github.com/unixpickle/globeprint"
+	"github.com/unixpickle/model3d"
 )
 
 func main() {
@@ -16,14 +16,14 @@ func main() {
 	defer f.Close()
 	img, err := png.Decode(f)
 	essentials.Must(err)
-	e := globeprint.NewEquirect(img)
+	e := model3d.NewEquirect(img)
 
 	sphereFunc := &EquirectFunc{Equirect: e}
 
 	mesh := BaseMesh(sphereFunc, 250)
 	SubdivideMesh(sphereFunc, mesh, 5, 0.001)
 
-	vertexColor := func(t *globeprint.Triangle) [3]float64 {
+	vertexColor := func(t *model3d.Triangle) [3]float64 {
 		var max [3]float64
 		for _, p := range t {
 			r, g, b, _ := e.At(p.Geo()).RGBA()

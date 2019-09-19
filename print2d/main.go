@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/unixpickle/essentials"
-	"github.com/unixpickle/globeprint"
+	"github.com/unixpickle/model3d"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	defer r.Close()
 	equirectImage, err := png.Decode(r)
 	essentials.Must(err)
-	e := globeprint.NewEquirect(equirectImage)
+	e := model3d.NewEquirect(equirectImage)
 
 	for _, north := range []bool{true, false} {
 		for idx := 0; idx < 4; idx++ {
@@ -34,7 +34,7 @@ func main() {
 	}
 }
 
-func createOctant(e *globeprint.Equirect, north bool, octantIdx int) image.Image {
+func createOctant(e *model3d.Equirect, north bool, octantIdx int) image.Image {
 	startAngle := float64(octantIdx-2) * math.Pi / 2
 	var strips []image.Image
 	for i := 0; i < 4; i++ {

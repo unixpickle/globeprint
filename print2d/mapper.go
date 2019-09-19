@@ -3,7 +3,7 @@ package main
 import (
 	"math"
 
-	"github.com/unixpickle/globeprint"
+	"github.com/unixpickle/model3d"
 )
 
 // An StripMapper maps points on a sphere to points on a
@@ -14,8 +14,8 @@ import (
 // Mapping a point outside of the defined strip will
 // result in undefined behavior.
 type StripMapper struct {
-	a        globeprint.GeoCoord
-	b        globeprint.GeoCoord
+	a        model3d.GeoCoord
+	b        model3d.GeoCoord
 	lonSpan  float64
 	distance float64
 }
@@ -26,8 +26,8 @@ func NewStripMapper(north bool, startLon, lonSpan float64) *StripMapper {
 		lat = math.Pi / 2
 	}
 	return &StripMapper{
-		a:        globeprint.GeoCoord{Lat: lat, Lon: startLon + lonSpan/2},
-		b:        globeprint.GeoCoord{Lat: 0, Lon: startLon + lonSpan/2},
+		a:        model3d.GeoCoord{Lat: lat, Lon: startLon + lonSpan/2},
+		b:        model3d.GeoCoord{Lat: 0, Lon: startLon + lonSpan/2},
 		lonSpan:  lonSpan,
 		distance: math.Pi / 2,
 	}
@@ -49,7 +49,7 @@ func (s *StripMapper) MaxLon() float64 {
 	return s.a.Lon + s.lonSpan/2
 }
 
-func (s *StripMapper) Map(g globeprint.GeoCoord) globeprint.Coord2D {
+func (s *StripMapper) Map(g model3d.GeoCoord) model3d.Coord2D {
 	d1 := s.a.Distance(g) / s.distance
 	d2 := s.b.Distance(g) / s.distance
 
@@ -66,5 +66,5 @@ func (s *StripMapper) Map(g globeprint.GeoCoord) globeprint.Coord2D {
 	if g.Lon < s.a.Lon {
 		x = -x
 	}
-	return globeprint.Coord2D{X: x, Y: y}
+	return model3d.Coord2D{X: x, Y: y}
 }

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/unixpickle/essentials"
-	"github.com/unixpickle/globeprint"
+	"github.com/unixpickle/model3d"
 )
 
 const FlatBase = false
@@ -18,10 +18,10 @@ func main() {
 	defer f.Close()
 	img, err := png.Decode(f)
 	essentials.Must(err)
-	e := globeprint.NewEquirect(img)
+	e := model3d.NewEquirect(img)
 	hc := &HoleChecker{Equirect: e}
 
-	mesh := globeprint.NewMeshSpherical(func(g globeprint.GeoCoord) float64 {
+	mesh := model3d.NewMeshPolar(func(g model3d.GeoCoord) float64 {
 		return 1
 	}, 100)
 
@@ -29,7 +29,7 @@ func main() {
 		SubdivideMesh(hc, mesh)
 	}
 
-	mesh.Iterate(func(t *globeprint.Triangle) {
+	mesh.Iterate(func(t *model3d.Triangle) {
 		if hc.TriangleHasHole(t) {
 			mesh.Remove(t)
 		}
@@ -44,47 +44,46 @@ func main() {
 	ioutil.WriteFile("bottom.stl", m2.EncodeSTL(), 0755)
 }
 
-func SubdivideMesh(hc *HoleChecker, mesh *globeprint.Mesh) {
-	subdivider := globeprint.NewSubdivider()
-	mesh.Iterate(func(t *globeprint.Triangle) {
+func SubdivideMesh(hc *HoleChecker, mesh *model3d.Mesh) {
+	subdivider := model3d.NewSubdivider()
+	mesh.Iterate(func(t *model3d.Triangle) {
 		h1 := hc.IsHole(t[0].Geo())
 		h2 := hc.IsHole(t[1].Geo())
 		h3 := hc.IsHole(t[2].Geo())
 		if h1 != h2 {
-			subdivider.Add(&t[0], &t[1])
+			subdivider.Add(t[0], t[1])
 		}
 		if h2 != h3 {
-			subdivider.Add(&t[1], &t[2])
+			subdivider.Add(t[1], t[2])
 		}
 		if h3 != h1 {
-			subdivider.Add(&t[2], &t[0])
+			subdivider.Add(t[2], t[0])
 		}
 	})
-	subdivider.Subdivide(mesh, func(p1, p2 *globeprint.Coord3D) *globeprint.Coord3D {
-		midpoint := globeprint.Coord3D{
+	subdivider.Subdivide(mesh, func(p1, p2 model3d.Coord3D) model3d.Coord3D {
+		midpoint := model3d.Coord3D{
 			X: (p1.X + p2.X) / 2,
 			Y: (p1.Y + p2.Y) / 2,
 			Z: (p1.Z + p2.Z) / 2,
 		}
-		midpoint.Scale(1 / midpoint.Norm())
-		return &midpoint
+		return midpoint.Scale(1 / midpoint.Norm())
 	})
 }
 
-func RemoveFloaters(m *globeprint.Mesh) {
+func RemoveFloaters(m *model3d.Mesh) {
 	// Find a triangle on the north pole, since we know
 	// all the major oceans are connected to it.
 	maxY := -1.0
-	var topTriangle *globeprint.Triangle
-	m.Iterate(func(t *globeprint.Triangle) {
+	var topTriangle *model3d.Triangle
+	m.Iterate(func(t *model3d.Triangle) {
 		if t[0].Y > maxY {
 			maxY = t[0].Y
 			topTriangle = t
 		}
 	})
 
-	queue := []*globeprint.Triangle{topTriangle}
-	visited := map[*globeprint.Triangle]bool{topTriangle: true}
+	queue := []*model3d.Triangle{topTriangle}
+	visited := map[*model3d.Triangle]bool{topTriangle: true}
 	for len(queue) > 0 {
 		next := queue[0]
 		queue = queue[1:]
@@ -95,15 +94,15 @@ func RemoveFloaters(m *globeprint.Mesh) {
 			}
 		}
 	}
-	m.Iterate(func(t *globeprint.Triangle) {
+	m.Iterate(func(t *model3d.Triangle) {
 		if !visited[t] {
 			m.Remove(t)
 		}
 	})
 }
 
-func CreateThickness(m *globeprint.Mesh, yDirection float64) {
-	m.Iterate(func(t *globeprint.Triangle) {
+func CreateThickness(m *model3d.Mesh, yDirection float64) {
+	m.Iterate(func(t *model3d.Triangle) {
 		scaled := ScaleTriangle(t, 1.4)
 		if FlatBase {
 			for i := range scaled {
@@ -124,10 +123,10 @@ func CreateThickness(m *globeprint.Mesh, yDirection float64) {
 	})
 }
 
-func FilterTopBottom(m *globeprint.Mesh) (*globeprint.Mesh, *globeprint.Mesh) {
-	m1 := globeprint.NewMesh()
-	m2 := globeprint.NewMesh()
-	m.Iterate(func(t *globeprint.Triangle) {
+func FilterTopBottom(m *model3d.Mesh) (*model3d.Mesh, *model3d.Mesh) {
+	m1 := model3d.NewMesh()
+	m2 := model3d.NewMesh()
+	m.Iterate(func(t *model3d.Triangle) {
 		maxY := math.Max(math.Max(t[0].Y, t[1].Y), t[2].Y)
 		minY := math.Min(math.Min(t[0].Y, t[1].Y), t[2].Y)
 		if maxY < 1e-4 {
@@ -140,7 +139,7 @@ func FilterTopBottom(m *globeprint.Mesh) (*globeprint.Mesh, *globeprint.Mesh) {
 	return m1, m2
 }
 
-func ScaleTriangle(t *globeprint.Triangle, s float64) *globeprint.Triangle {
+func ScaleTriangle(t *model3d.Triangle, s float64) *model3d.Triangle {
 	t1 := *t
 	for i, x := range t {
 		x.Scale(s)
@@ -149,16 +148,16 @@ func ScaleTriangle(t *globeprint.Triangle, s float64) *globeprint.Triangle {
 	return &t1
 }
 
-func CreateQuad(m *globeprint.Mesh, p1, p2, p3, p4 *globeprint.Coord3D) {
-	m.Add(&globeprint.Triangle{*p1, *p2, *p3})
-	m.Add(&globeprint.Triangle{*p1, *p3, *p4})
+func CreateQuad(m *model3d.Mesh, p1, p2, p3, p4 *model3d.Coord3D) {
+	m.Add(&model3d.Triangle{*p1, *p2, *p3})
+	m.Add(&model3d.Triangle{*p1, *p3, *p4})
 }
 
 type HoleChecker struct {
-	Equirect *globeprint.Equirect
+	Equirect *model3d.Equirect
 }
 
-func (h *HoleChecker) IsHole(coord globeprint.GeoCoord) bool {
+func (h *HoleChecker) IsHole(coord model3d.GeoCoord) bool {
 	r, g, b, _ := h.Equirect.At(coord).RGBA()
 	if r > 0xf000 && g > 0xf000 && b > 0xf000 {
 		return true
@@ -166,6 +165,6 @@ func (h *HoleChecker) IsHole(coord globeprint.GeoCoord) bool {
 	return false
 }
 
-func (h *HoleChecker) TriangleHasHole(t *globeprint.Triangle) bool {
+func (h *HoleChecker) TriangleHasHole(t *model3d.Triangle) bool {
 	return h.IsHole(t[0].Geo()) || h.IsHole(t[1].Geo()) || h.IsHole(t[2].Geo())
 }
