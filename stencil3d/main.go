@@ -8,6 +8,7 @@ import (
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/toolbox3d"
 )
 
 const FlatBase = false
@@ -18,7 +19,7 @@ func main() {
 	defer f.Close()
 	img, err := png.Decode(f)
 	essentials.Must(err)
-	e := model3d.NewEquirect(img)
+	e := toolbox3d.NewEquirect(img)
 	hc := &HoleChecker{Equirect: e}
 
 	mesh := model3d.NewMeshPolar(func(g model3d.GeoCoord) float64 {
@@ -154,7 +155,7 @@ func CreateQuad(m *model3d.Mesh, p1, p2, p3, p4 *model3d.Coord3D) {
 }
 
 type HoleChecker struct {
-	Equirect *model3d.Equirect
+	Equirect *toolbox3d.Equirect
 }
 
 func (h *HoleChecker) IsHole(coord model3d.GeoCoord) bool {

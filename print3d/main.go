@@ -8,6 +8,7 @@ import (
 
 	"github.com/unixpickle/essentials"
 	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/toolbox3d"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 	defer f.Close()
 	img, err := png.Decode(f)
 	essentials.Must(err)
-	e := model3d.NewEquirect(img)
+	e := toolbox3d.NewEquirect(img)
 
 	sphereFunc := &EquirectFunc{Equirect: e}
 

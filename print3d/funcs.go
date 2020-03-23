@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/toolbox3d"
 )
 
 type SphereFunc interface {
@@ -11,7 +12,7 @@ type SphereFunc interface {
 }
 
 type EquirectFunc struct {
-	Equirect *model3d.Equirect
+	Equirect *toolbox3d.Equirect
 }
 
 func (e *EquirectFunc) Radius(coord model3d.GeoCoord) float64 {
