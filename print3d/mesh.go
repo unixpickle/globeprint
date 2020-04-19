@@ -3,7 +3,7 @@ package main
 import (
 	"math"
 
-	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/model3d"
 )
 
 func BaseMesh(s SphereFunc, stops int) *model3d.Mesh {

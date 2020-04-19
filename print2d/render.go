@@ -4,7 +4,8 @@ import (
 	"image"
 	"math"
 
-	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/model3d"
+	"github.com/unixpickle/model3d/toolbox3d"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 	renderLonStep = 0.0003
 )
 
-func RenderStrip(e *model3d.Equirect, s *StripMapper) image.Image {
+func RenderStrip(e *toolbox3d.Equirect, s *StripMapper) image.Image {
 	widthToHeight := s.Map(model3d.GeoCoord{Lat: 0, Lon: s.MaxLon()}).X * 2
 	width := int(math.Ceil(widthToHeight * renderHeight))
 	res := image.NewRGBA(image.Rect(0, 0, width, renderHeight))

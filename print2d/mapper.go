@@ -3,7 +3,7 @@ package main
 import (
 	"math"
 
-	"github.com/unixpickle/model3d"
+	"github.com/unixpickle/model3d/model3d"
 )
 
 // An StripMapper maps points on a sphere to points on a
